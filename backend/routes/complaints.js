@@ -4,7 +4,7 @@ const { randomUUID } = require("crypto");
 const path = require("path");
 const db = require("../db");
 const { authenticate } = require("../middleware/auth");
-const { getUploadStore } = require("../upload-store");
+const { getUploadKey } = require("../photo-key");
 
 const imageTypes = {
   ".jpg": "image/jpeg",
@@ -46,18 +46,8 @@ function hasValidImageSignature(buffer, mimetype) {
   return false;
 }
 
-async function removeUploadedBlob(key) {
-  if (!key) return;
-  try {
-    await getUploadStore().delete(key);
-  } catch (error) {
-    console.error("Could not remove failed complaint upload:", error);
-  }
-}
-
 router.post("/", authenticate, receivePhoto, async (req, res) => {
-  let saved = false;
-  let photoKey = null;
+  let client;
   try {
     const { category, description, department, location } = req.body;
     if (![category, description, department, location].every(value => typeof value === "string" && value.trim())) {
@@ -68,24 +58,26 @@ router.post("/", authenticate, receivePhoto, async (req, res) => {
       return res.status(400).json({ success: false, message: "The uploaded file is not a valid image" });
     }
 
-    photoKey = req.file ? `${randomUUID()}${path.extname(req.file.originalname).toLowerCase()}` : null;
+    const photoKey = req.file ? `${randomUUID()}${path.extname(req.file.originalname).toLowerCase()}` : null;
     const photo = photoKey ? `/uploads/${photoKey}` : null;
     const complaintCode = `CMP-${randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
 
-    if (req.file) {
-      await getUploadStore().set(photoKey, req.file.buffer, {
-        metadata: { contentType: req.file.mimetype }
-      });
-    }
-
-    const result = await db.query(
+    client = await db.connect();
+    await client.query("BEGIN");
+    const result = await client.query(
       `INSERT INTO complaints
-      (complaint_code, student_id, category, description, department, location, photo, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, 'Submitted')
-      RETURNING id`,
+       (complaint_code, student_id, category, description, department, location, photo, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'Submitted')
+       RETURNING id`,
       [complaintCode, req.user.id, category.trim(), description.trim(), department.trim(), location.trim(), photo]
     );
-    saved = true;
+    if (req.file) {
+      await client.query(
+        "INSERT INTO complaint_photos (key, content_type, data) VALUES ($1, $2, $3)",
+        [photoKey, req.file.mimetype, req.file.buffer]
+      );
+    }
+    await client.query("COMMIT");
 
     res.status(201).json({
       success: true,
@@ -95,20 +87,22 @@ router.post("/", authenticate, receivePhoto, async (req, res) => {
       photo
     });
   } catch (e) {
+    if (client) await client.query("ROLLBACK").catch(() => {});
     console.error(e);
-    if (!saved) await removeUploadedBlob(photoKey);
     res.status(500).json({ success: false, message: "Could not save complaint. Please try again." });
+  } finally {
+    client?.release();
   }
 });
 
 router.get("/mine", authenticate, async (req, res) => {
   try {
-    const [rows] = await db.query(
+    const { rows } = await db.query(
       `SELECT id, complaint_code, category, description, department, location, photo, status, admin_note, created_at, updated_at
        FROM complaints WHERE student_id = $1 ORDER BY created_at DESC`,
       [req.user.id]
     );
-    res.json({ success: true, complaints: rows.rows });
+    res.json({ success: true, complaints: rows });
   } catch (e) {
     console.error(e);
     res.status(500).json({ success: false, message: "Could not load your complaints" });

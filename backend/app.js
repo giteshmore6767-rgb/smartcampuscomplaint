@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const db = require("./db");
-const { getUploadKey, getUploadStore } = require("./upload-store");
+const { getUploadKey } = require("./photo-key");
 
 const authRoutes = require("./routes/auth");
 const complaintRoutes = require("./routes/complaints");
@@ -40,7 +40,12 @@ app.post("/api/_migration/upload/:filename", express.raw({
   }
 
   try {
-    await getUploadStore().set(key, req.body, { metadata: { contentType } });
+    await db.query(
+      `INSERT INTO complaint_photos (key, content_type, data)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (key) DO UPDATE SET content_type = EXCLUDED.content_type, data = EXCLUDED.data`,
+      [key, contentType, req.body]
+    );
     res.json({ success: true });
   } catch (error) {
     console.error("Could not migrate complaint photo:", error);
@@ -53,16 +58,16 @@ app.get("/uploads/:filename", async (req, res) => {
   if (!key) return res.status(404).end();
 
   try {
-    const entry = await getUploadStore().getWithMetadata(key, {
-      consistency: "strong",
-      type: "arrayBuffer"
-    });
-    if (!entry) return res.status(404).end();
+    const { rows } = await db.query(
+      "SELECT content_type, data FROM complaint_photos WHERE key = $1",
+      [key]
+    );
+    if (!rows.length) return res.status(404).end();
 
     res
-      .set("Content-Type", entry.metadata?.contentType || "application/octet-stream")
+      .set("Content-Type", rows[0].content_type)
       .set("Cache-Control", "public, max-age=31536000, immutable")
-      .send(Buffer.from(entry.data));
+      .send(rows[0].data);
   } catch (error) {
     console.error("Could not load complaint photo:", error);
     res.status(500).end();

@@ -32,5 +32,12 @@ CREATE TABLE complaints (
 
 CREATE INDEX complaints_student_created_at_idx
   ON complaints (student_id, created_at DESC);
+
+CREATE TABLE complaint_photos (
+  key VARCHAR(255) PRIMARY KEY,
+  content_type VARCHAR(50) NOT NULL,
+  data BYTEA NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
   'Administration'
 );

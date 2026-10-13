@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const db = require("../db");
 const { authenticate, adminOnly } = require("../middleware/auth");
-const { getUploadKey, getUploadStore } = require("../upload-store");
+const { getUploadKey } = require("../photo-key");
 
 router.get("/dashboard", authenticate, adminOnly, async (req, res) => {
   try {
@@ -98,7 +98,9 @@ router.delete("/complaints/:id", authenticate, adminOnly, async (req, res) => {
           "SELECT id FROM complaints WHERE photo = $1 LIMIT 1",
           [photo]
         );
-        if (!otherReferences.rows.length) await getUploadStore().delete(photoKey);
+        if (!otherReferences.rows.length) {
+          await db.query("DELETE FROM complaint_photos WHERE key = $1", [photoKey]);
+        }
       } catch (error) {
         photoCleanupFailed = true;
         console.error("Could not remove deleted complaint photo:", error);

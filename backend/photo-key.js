@@ -1,9 +1,4 @@
 const path = require("path");
-const { getStore } = require("@netlify/blobs");
-
-function getUploadStore() {
-  return getStore("complaint-uploads");
-}
 
 function getUploadKey(photo) {
   if (typeof photo !== "string" || !photo.startsWith("/uploads/")) return null;
@@ -12,4 +7,4 @@ function getUploadKey(photo) {
   return key;
 }
 
-module.exports = { getUploadKey, getUploadStore };
+module.exports = { getUploadKey };

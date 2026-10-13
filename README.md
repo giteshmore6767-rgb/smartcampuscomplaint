@@ -7,7 +7,7 @@ A full-stack campus portal for student and administrator complaint workflows.
 - Static HTML, CSS, and JavaScript frontend
 - Express API deployed as a Netlify Function
 - Netlify Database (PostgreSQL)
-- Netlify Blobs for complaint photos
+- PostgreSQL storage for complaint photos
 
 ## Netlify deployment
 
