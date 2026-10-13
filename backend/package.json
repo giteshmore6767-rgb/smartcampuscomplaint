@@ -11,10 +11,11 @@
     "@netlify/database": "^2.0.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.4.0",
+    "mysql2": "^3.24.6",
     "pg": "^8.23.1",
     "serverless-http": "^4.0.0"
   }

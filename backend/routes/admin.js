@@ -5,7 +5,7 @@ const { getUploadKey } = require("../photo-key");
 
 router.get("/dashboard", authenticate, adminOnly, async (req, res) => {
   try {
-    const { rows } = await db.query(`
+    const query = db.isPostgres ? `
       SELECT
       COUNT(*)::int AS total,
       COUNT(*) FILTER (WHERE status = 'Submitted')::int AS submitted,
@@ -13,7 +13,16 @@ router.get("/dashboard", authenticate, adminOnly, async (req, res) => {
       COUNT(*) FILTER (WHERE status = 'Resolved')::int AS resolved,
       COUNT(*) FILTER (WHERE status = 'Rejected')::int AS rejected
       FROM complaints
-    `);
+    ` : `
+      SELECT
+      COUNT(*) AS total,
+      COALESCE(SUM(status = 'Submitted'), 0) AS submitted,
+      COALESCE(SUM(status = 'Processing'), 0) AS processing,
+      COALESCE(SUM(status = 'Resolved'), 0) AS resolved,
+      COALESCE(SUM(status = 'Rejected'), 0) AS rejected
+      FROM complaints
+    `;
+    const { rows } = await db.query(query);
     res.json({ success:true, stats: rows[0] });
   } catch (e) {
     res.status(500).json({ success:false, message:"Could not load dashboard" });
@@ -99,7 +108,7 @@ router.delete("/complaints/:id", authenticate, adminOnly, async (req, res) => {
           [photo]
         );
         if (!otherReferences.rows.length) {
-          await db.query("DELETE FROM complaint_photos WHERE key = $1", [photoKey]);
+          await db.query("DELETE FROM complaint_photos WHERE photo_key = $1", [photoKey]);
         }
       } catch (error) {
         photoCleanupFailed = true;

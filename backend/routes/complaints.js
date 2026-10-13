@@ -73,7 +73,7 @@ router.post("/", authenticate, receivePhoto, async (req, res) => {
     );
     if (req.file) {
       await client.query(
-        "INSERT INTO complaint_photos (key, content_type, data) VALUES ($1, $2, $3)",
+        "INSERT INTO complaint_photos (photo_key, content_type, data) VALUES ($1, $2, $3)",
         [photoKey, req.file.mimetype, req.file.buffer]
       );
     }

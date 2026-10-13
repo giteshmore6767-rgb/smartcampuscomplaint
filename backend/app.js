@@ -29,7 +29,7 @@ app.get("/uploads/:filename", async (req, res) => {
 
   try {
     const { rows } = await db.query(
-      "SELECT content_type, data FROM complaint_photos WHERE key = $1",
+      "SELECT content_type, data FROM complaint_photos WHERE photo_key = $1",
       [key]
     );
     if (!rows.length) return res.status(404).end();
@@ -54,4 +54,12 @@ app.use((error, req, res, next) => {
   res.status(500).json({ success: false, message: "Server error" });
 });
 
+
 module.exports = app;
+
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Smart Campus API running on port ${PORT}`);
+  });
+}

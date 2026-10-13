@@ -1,0 +1,1 @@
+ALTER TABLE complaint_photos RENAME COLUMN key TO photo_key;

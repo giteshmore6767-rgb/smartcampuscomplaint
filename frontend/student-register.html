@@ -30,42 +30,7 @@
     <p>Already have an account? <a href="student-login.html">Sign In</a></p>
   </main>
   <footer class="site-footer"><strong>Smart Campus</strong><span>KTHM College, Nashik</span><span>Campus Complaint &amp; Facility Portal</span><span>K.R.T. Arts, B.H. Commerce &amp; A.M. Science College, Nashik</span><div class="creator-credit"><small>Created by</small><span class="creator-signature">Gitesh More</span></div></footer>
-  <script>
-    document.querySelectorAll("[data-password-toggle]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        const input = document.getElementById(button.dataset.passwordToggle);
-        const showing = input.type === "password";
-        input.type = showing ? "text" : "password";
-        button.setAttribute("aria-pressed", String(showing));
-        button.setAttribute("aria-label", showing ? "Hide password" : "Show password");
-      });
-    });
-    document.getElementById("registerForm").addEventListener("submit", async function (event) {
-      event.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const department = document.getElementById("department").value;
-      const roll_no = document.getElementById("roll_no").value.trim();
-      const password = document.getElementById("password").value;
-      const message = document.getElementById("message");
-      message.dataset.state = "loading";
-      message.textContent = "Creating your profile...";
-      try {
-        const response = await fetch("http://localhost:5000/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name, department: department, roll_no: roll_no, password: password })
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || "Registration failed");
-        message.dataset.state = "success";
-        message.textContent = "Profile created. Taking you to sign in...";
-        setTimeout(function () { window.location.href = "student-login.html"; }, 1000);
-      } catch (error) {
-        console.error(error);
-        message.dataset.state = "error";
-        message.textContent = error.message;
-      }
-    });
-  </script>
+  <script src="js/config.js"></script>
+  <script src="register.js"></script>
 </body>
 </html>
