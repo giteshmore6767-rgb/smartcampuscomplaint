@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Profile | Smart Campus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+  <main class="auth-card">
+    <a class="back" href="index.html">&larr; Back to home</a>
+    <div class="brand big">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="currentColor"/><text x="20" y="25" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="700">SC</text></svg>
+      <span class="brand-copy">Smart Campus<small>KTHM College, Nashik</small></span>
+    </div>
+    <h1>Create Profile</h1>
+    <p class="muted">Set up your student account to access campus services.</p>
+    <form id="registerForm" autocomplete="off">
+      <label>Full Name<input type="text" id="name" placeholder="Your full name" autocomplete="off" required></label>
+      <label>Department<select id="department" autocomplete="off" required><option value="">Select Department</option><option value="Science">Science</option><option value="Commerce">Commerce</option><option value="Arts">Arts</option><option value="Computer">Computer</option><option value="Civil">Civil</option><option value="Mechanical">Mechanical</option><option value="Electrical">Electrical</option><option value="Other">Other</option></select></label>
+      <label>Roll Number / Student ID<input type="text" id="roll_no" placeholder="Enter your roll number" autocomplete="off" required></label>
+      <label>Password<div class="input-wrap"><input type="password" id="password" placeholder="At least 6 characters" minlength="6" autocomplete="new-password" required><button class="password-toggle" type="button" data-password-toggle="password" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button></div></label>
+      <button class="btn primary full" type="submit">Create Profile <span aria-hidden="true">&rarr;</span></button>
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+    </form>
+    <p>Already have an account? <a href="student-login.html">Sign In</a></p>
+  </main>
+  <footer class="site-footer"><strong>Smart Campus</strong><span>KTHM College, Nashik</span><span>Campus Complaint &amp; Facility Portal</span><span>K.R.T. Arts, B.H. Commerce &amp; A.M. Science College, Nashik</span><div class="creator-credit"><small>Created by</small><span class="creator-signature">Gitesh More</span></div></footer>
+  <script>
+    document.querySelectorAll("[data-password-toggle]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const input = document.getElementById(button.dataset.passwordToggle);
+        const showing = input.type === "password";
+        input.type = showing ? "text" : "password";
+        button.setAttribute("aria-pressed", String(showing));
+        button.setAttribute("aria-label", showing ? "Hide password" : "Show password");
+      });
+    });
+    document.getElementById("registerForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const department = document.getElementById("department").value;
+      const roll_no = document.getElementById("roll_no").value.trim();
+      const password = document.getElementById("password").value;
+      const message = document.getElementById("message");
+      message.dataset.state = "loading";
+      message.textContent = "Creating your profile...";
+      try {
+        const response = await fetch("http://localhost:5000/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name, department: department, roll_no: roll_no, password: password })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Registration failed");
+        message.dataset.state = "success";
+        message.textContent = "Profile created. Taking you to sign in...";
+        setTimeout(function () { window.location.href = "student-login.html"; }, 1000);
+      } catch (error) {
+        console.error(error);
+        message.dataset.state = "error";
+        message.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>

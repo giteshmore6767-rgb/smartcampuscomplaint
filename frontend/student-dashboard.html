@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Student Dashboard | Smart Campus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<script src="js/theme.js"></script>
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard-page">
+	<aside class="sidebar">
+		<a class="brand" href="index.html"><svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="currentColor"/><text x="20" y="25" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="700">SC</text></svg><span class="brand-copy">Smart Campus<small>KTHM College, Nashik</small></span></a>
+		<nav aria-label="Student navigation">
+			<a class="active" href="student-dashboard.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</a>
+			<a href="register-complaint.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>New Complaint</a>
+			<a href="track-complaint.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4M8 11h6M8 8h4" stroke-linecap="round"/></svg>Track Complaints</a>
+			<a href="#profile"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.2 3.1-5 7-5s6.3 1.8 7 5" stroke-linecap="round"/></svg>Student Profile</a>
+		</nav>
+		<button class="logout" onclick="logout()">Log Out</button>
+	</aside>
+	<main class="dash-main">
+		<header class="dash-head"><div><span class="eyebrow">KTHM COLLEGE, NASHIK</span><h1 id="welcome">Welcome</h1><p class="muted">Manage your campus complaints from one place.</p></div><div class="dashboard-actions"><button id="notificationButton" class="notification-button" type="button" aria-label="Notifications" aria-expanded="false" aria-controls="notificationPanel" title="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="notificationCount" class="notification-count" hidden>0</span></button><a class="btn primary" href="register-complaint.html"><span aria-hidden="true">+</span> New Complaint</a><section id="notificationPanel" class="notification-panel" aria-label="Notifications" hidden><div class="notification-panel-head"><h2>Recent updates</h2><button id="clearNotifications" class="notification-clear" type="button">Clear</button></div><ul id="notificationList" class="notification-list"><li class="muted">No recent updates.</li></ul></section></div></header>
+		<section class="stats student-stats" aria-label="Complaint summary">
+			<div><div class="stat-top"><span>Total Complaints</span><i class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v6h5M10 14h6M10 17h6" stroke-linecap="round"/></svg></i></div><strong id="total">0</strong></div>
+			<div><div class="stat-top"><span>Submitted</span><i class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2" stroke-linecap="round"/></svg></i></div><strong id="submitted">0</strong></div>
+			<div><div class="stat-top"><span>Processing</span><i class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 12a8 8 0 0 1-14 5l-2-2" stroke-linecap="round"/><path d="M20 5v4h-4M4 19v-4h4" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div><strong id="processing">0</strong></div>
+			<div><div class="stat-top"><span>Resolved</span><i class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m5 12 4 4L19 6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9"/></svg></i></div><strong id="resolved">0</strong></div>
+			<div><div class="stat-top"><span>Rejected</span><i class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m8 8 8 8M16 8l-8 8" stroke-linecap="round"/><circle cx="12" cy="12" r="9"/></svg></i></div><strong id="rejected">0</strong></div>
+		</section>
+		<section class="panel">
+			<div class="panel-title"><h2>Recent Complaints</h2><a href="track-complaint.html">View all &rarr;</a></div>
+			<div id="complaints" class="complaint-list"></div>
+		</section>
+		<div class="profile-grid">
+			<section id="profile" class="panel">
+				<div class="panel-title"><div><h2>Student Profile</h2><p class="profile-college">KTHM College, Nashik</p></div><button class="btn secondary" type="button" data-edit-profile>Edit Profile</button></div>
+				<div class="profile-summary"><div id="profileAvatar" class="avatar" aria-hidden="true">SC</div><div><h3 id="profileName">Student</h3><p id="profileDepartment">Department not available</p></div></div>
+				<div class="profile-details"><div><span>Roll Number</span><strong id="profileRoll">Not available</strong></div><div><span>Account Email</span><strong id="profileEmail">Not available</strong></div></div>
+			</section>
+			<aside class="panel info-panel"><h2>Campus Information</h2><p>Include a clear location and a concise description when reporting an issue. Add a photo when it helps the campus team understand what needs attention.</p></aside>
+		</div>
+		<dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileDialogTitle">
+			<form id="profileForm">
+				<div class="panel-title"><h2 id="profileDialogTitle">Edit Profile</h2><button class="dialog-close" type="button" data-close-profile aria-label="Close dialog">&times;</button></div>
+				<label>Full Name<input id="profileEditName" name="name" maxlength="100" autocomplete="name" required></label>
+				<label>Department<select id="profileEditDepartment" name="department" required><option value="">Select your department</option><option value="Science">Science</option><option value="Commerce">Commerce</option><option value="Arts">Arts</option><option value="Computer">Computer</option><option value="Civil">Civil</option><option value="Mechanical">Mechanical</option><option value="Electrical">Electrical</option><option value="Other">Other</option></select></label>
+				<div id="profileMessage" class="message" role="status" aria-live="polite"></div>
+				<div class="dialog-actions"><button class="btn secondary" type="button" data-close-profile>Cancel</button><button class="btn primary" type="submit">Save Changes</button></div>
+			</form>
+		</dialog>
+		<footer class="site-footer"><strong>Smart Campus</strong><span>KTHM College, Nashik</span><span>Campus Complaint &amp; Facility Portal</span><span>K.R.T. Arts, B.H. Commerce &amp; A.M. Science College, Nashik</span><div class="creator-credit"><small>Created by</small><span class="creator-signature">Gitesh More</span></div></footer>
+	</main>
+	<script src="js/config.js"></script>
+	<script src="js/student.js"></script>
+</body>
+</html>

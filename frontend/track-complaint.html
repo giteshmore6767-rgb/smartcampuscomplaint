@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Track Complaints | Smart Campus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<script src="js/theme.js"></script>
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard-page">
+	<aside class="sidebar">
+		<a class="brand" href="index.html"><svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="currentColor"/><text x="20" y="25" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="700">SC</text></svg><span class="brand-copy">Smart Campus<small>KTHM College, Nashik</small></span></a>
+		<nav aria-label="Student navigation">
+			<a href="student-dashboard.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</a>
+			<a href="register-complaint.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>New Complaint</a>
+			<a class="active" href="track-complaint.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4M8 11h6M8 8h4" stroke-linecap="round"/></svg>Track Complaints</a>
+			<a href="student-dashboard.html#profile"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.2 3.1-5 7-5s6.3 1.8 7 5" stroke-linecap="round"/></svg>Student Profile</a>
+		</nav>
+		<button class="logout" onclick="logout()">Log Out</button>
+	</aside>
+	<main class="dash-main">
+		<header class="dash-head"><div><span class="eyebrow">KTHM COLLEGE, NASHIK</span><h1>Track Complaints</h1><p class="muted">Review complaint status, dates, and campus team notes.</p></div><a class="btn primary" href="register-complaint.html"><span aria-hidden="true">+</span> New Complaint</a></header>
+		<section class="panel"><div class="panel-title"><h2>Your requests</h2></div><div class="complaint-filters"><label>Search by complaint ID<input id="complaintSearch" type="search" placeholder="e.g. CMP-1024" autocomplete="off"></label><label>Filter by status<select id="statusFilter"><option value="">All statuses</option><option>Submitted</option><option>Processing</option><option>Resolved</option><option>Rejected</option></select></label><label>Filter by category<select id="categoryFilter"><option value="">All categories</option></select></label></div><div id="complaints" class="complaint-list" aria-live="polite"></div></section>
+		<footer class="site-footer"><strong>Smart Campus</strong><span>KTHM College, Nashik</span><span>Campus Complaint &amp; Facility Portal</span><span>K.R.T. Arts, B.H. Commerce &amp; A.M. Science College, Nashik</span><div class="creator-credit"><small>Created by</small><span class="creator-signature">Gitesh More</span></div></footer>
+	</main>
+	<script src="js/config.js"></script>
+	<script src="js/student.js"></script>
+</body>
+</html>

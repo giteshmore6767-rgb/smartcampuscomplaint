@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal | Smart Campus</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+    <main class="auth-card">
+        <a class="back" href="index.html">&larr; Back to home</a>
+        <div class="brand big">
+            <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="currentColor"/><text x="20" y="25" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="700">SC</text></svg>
+            <span class="brand-copy">Smart Campus<small>KTHM College, Nashik</small></span>
+        </div>
+        <h1>Admin Portal</h1>
+        <p class="muted">Review campus requests and share progress with students.</p>
+        <form id="loginForm" autocomplete="off">
+            <label>Email<input id="email" type="email" placeholder="Enter your admin email" autocomplete="off" required></label>
+            <label>Password<div class="input-wrap"><input id="password" type="password" placeholder="Enter your password" autocomplete="off" required><button class="password-toggle" type="button" data-password-toggle="password" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button></div></label>
+            <button class="btn primary full" type="submit">Sign In to Admin Portal <span aria-hidden="true">&rarr;</span></button>
+            <div id="message" class="message" role="status" aria-live="polite"></div>
+        </form>
+    </main>
+    <footer class="site-footer"><strong>Smart Campus</strong><span>KTHM College, Nashik</span><span>Campus Complaint &amp; Facility Portal</span><span>K.R.T. Arts, B.H. Commerce &amp; A.M. Science College, Nashik</span><div class="creator-credit"><small>Created by</small><span class="creator-signature">Gitesh More</span></div></footer>
+    <script src="js/config.js"></script>
+    <script src="js/admin-login.js"></script>
+    <script>
+        document.querySelectorAll("[data-password-toggle]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                const input = document.getElementById(button.dataset.passwordToggle);
+                const showing = input.type === "password";
+                input.type = showing ? "text" : "password";
+                button.setAttribute("aria-pressed", String(showing));
+                button.setAttribute("aria-label", showing ? "Hide password" : "Show password");
+            });
+        });
+    </script>
+</body>
+</html>
