@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { getJwtSecret } = require("../jwt-secret");
 
 function authenticate(req, res, next) {
   const header = req.headers.authorization || "";
@@ -7,7 +8,7 @@ function authenticate(req, res, next) {
   if (!token) return res.status(401).json({ success: false, message: "Login required" });
 
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET || "change_this_secret");
+    req.user = jwt.verify(token, getJwtSecret());
     next();
   } catch {
     return res.status(401).json({ success: false, message: "Invalid or expired token" });

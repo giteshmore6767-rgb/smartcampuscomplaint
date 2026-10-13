@@ -1,12 +1,11 @@
 const router = require("express").Router();
 const multer = require("multer");
-const fs = require("fs/promises");
 const { randomUUID } = require("crypto");
 const path = require("path");
 const db = require("../db");
 const { authenticate } = require("../middleware/auth");
+const { getUploadStore } = require("../upload-store");
 
-const uploadDirectory = path.join(__dirname, "..", "uploads");
 const imageTypes = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
@@ -15,15 +14,9 @@ const imageTypes = {
   ".webp": "image/webp"
 };
 
-const storage = multer.diskStorage({
-  destination: uploadDirectory,
-  filename: (req, file, cb) => {
-    cb(null, `${randomUUID()}${path.extname(file.originalname).toLowerCase()}`);
-  }
-});
 const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 4 * 1024 * 1024, files: 1 },
   fileFilter: (req, file, cb) => {
     if (!file.originalname) return cb(null, false);
     const extension = path.extname(file.originalname).toLowerCase();
@@ -38,58 +31,58 @@ function receivePhoto(req, res, next) {
   upload.single("photo")(req, res, error => {
     if (!error) return next();
     const message = error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE"
-      ? "Photo must be 5 MB or smaller"
+      ? "Photo must be 4 MB or smaller"
       : error.message || "Could not upload photo";
     return res.status(400).json({ success: false, message });
   });
 }
 
-async function hasValidImageSignature(filePath, mimetype) {
-  const handle = await fs.open(filePath, "r");
-  try {
-    const header = Buffer.alloc(12);
-    const { bytesRead } = await handle.read(header, 0, header.length, 0);
-    const bytes = header.subarray(0, bytesRead);
-    if (mimetype === "image/jpeg") return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-    if (mimetype === "image/png") return bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-    if (mimetype === "image/gif") return bytes.subarray(0, 6).toString("ascii").match(/^GIF8[79]a$/) !== null;
-    if (mimetype === "image/webp") return bytes.length >= 12 && bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP";
-    return false;
-  } finally {
-    await handle.close();
-  }
+function hasValidImageSignature(buffer, mimetype) {
+  const bytes = buffer.subarray(0, 12);
+  if (mimetype === "image/jpeg") return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  if (mimetype === "image/png") return bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  if (mimetype === "image/gif") return bytes.subarray(0, 6).toString("ascii").match(/^GIF8[79]a$/) !== null;
+  if (mimetype === "image/webp") return bytes.length >= 12 && bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP";
+  return false;
 }
 
-async function removeUploadedFile(file) {
-  if (!file) return;
+async function removeUploadedBlob(key) {
+  if (!key) return;
   try {
-    await fs.unlink(file.path);
+    await getUploadStore().delete(key);
   } catch (error) {
-    if (error.code !== "ENOENT") console.error("Could not remove failed complaint upload:", error);
+    console.error("Could not remove failed complaint upload:", error);
   }
 }
 
 router.post("/", authenticate, receivePhoto, async (req, res) => {
   let saved = false;
+  let photoKey = null;
   try {
     const { category, description, department, location } = req.body;
     if (![category, description, department, location].every(value => typeof value === "string" && value.trim())) {
-      await removeUploadedFile(req.file);
       return res.status(400).json({ success: false, message: "Please fill in category, department, location, and description" });
     }
 
-    if (req.file && !await hasValidImageSignature(req.file.path, req.file.mimetype)) {
-      await removeUploadedFile(req.file);
+    if (req.file && !hasValidImageSignature(req.file.buffer, req.file.mimetype)) {
       return res.status(400).json({ success: false, message: "The uploaded file is not a valid image" });
     }
 
-    const photo = req.file ? `/uploads/${req.file.filename}` : null;
+    photoKey = req.file ? `${randomUUID()}${path.extname(req.file.originalname).toLowerCase()}` : null;
+    const photo = photoKey ? `/uploads/${photoKey}` : null;
     const complaintCode = `CMP-${randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
 
-    const [result] = await db.query(
+    if (req.file) {
+      await getUploadStore().set(photoKey, req.file.buffer, {
+        metadata: { contentType: req.file.mimetype }
+      });
+    }
+
+    const result = await db.query(
       `INSERT INTO complaints
       (complaint_code, student_id, category, description, department, location, photo, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'Submitted')`,
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'Submitted')
+      RETURNING id`,
       [complaintCode, req.user.id, category.trim(), description.trim(), department.trim(), location.trim(), photo]
     );
     saved = true;
@@ -97,13 +90,13 @@ router.post("/", authenticate, receivePhoto, async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Complaint submitted successfully",
-      id: result.insertId,
+      id: result.rows[0].id,
       complaint_code: complaintCode,
       photo
     });
   } catch (e) {
     console.error(e);
-    if (!saved) await removeUploadedFile(req.file);
+    if (!saved) await removeUploadedBlob(photoKey);
     res.status(500).json({ success: false, message: "Could not save complaint. Please try again." });
   }
 });
@@ -112,10 +105,10 @@ router.get("/mine", authenticate, async (req, res) => {
   try {
     const [rows] = await db.query(
       `SELECT id, complaint_code, category, description, department, location, photo, status, admin_note, created_at, updated_at
-       FROM complaints WHERE student_id = ? ORDER BY created_at DESC`,
+       FROM complaints WHERE student_id = $1 ORDER BY created_at DESC`,
       [req.user.id]
     );
-    res.json({ success: true, complaints: rows });
+    res.json({ success: true, complaints: rows.rows });
   } catch (e) {
     console.error(e);
     res.status(500).json({ success: false, message: "Could not load your complaints" });

@@ -1,22 +1,20 @@
 const router = require("express").Router();
-const fs = require("fs/promises");
-const path = require("path");
 const db = require("../db");
 const { authenticate, adminOnly } = require("../middleware/auth");
-const uploadDirectory = path.resolve(__dirname, "..", "uploads");
+const { getUploadKey, getUploadStore } = require("../upload-store");
 
 router.get("/dashboard", authenticate, adminOnly, async (req, res) => {
   try {
-    const [[stats]] = await db.query(`
+    const { rows } = await db.query(`
       SELECT
-      COUNT(*) AS total,
-      SUM(status='Submitted') AS submitted,
-      SUM(status='Processing') AS processing,
-      SUM(status='Resolved') AS resolved,
-      SUM(status='Rejected') AS rejected
+      COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE status = 'Submitted')::int AS submitted,
+      COUNT(*) FILTER (WHERE status = 'Processing')::int AS processing,
+      COUNT(*) FILTER (WHERE status = 'Resolved')::int AS resolved,
+      COUNT(*) FILTER (WHERE status = 'Rejected')::int AS rejected
       FROM complaints
     `);
-    res.json({ success:true, stats });
+    res.json({ success:true, stats: rows[0] });
   } catch (e) {
     res.status(500).json({ success:false, message:"Could not load dashboard" });
   }
@@ -24,7 +22,7 @@ router.get("/dashboard", authenticate, adminOnly, async (req, res) => {
 
 router.get("/complaints", authenticate, adminOnly, async (req, res) => {
   try {
-    const [rows] = await db.query(`
+    const { rows } = await db.query(`
             SELECT c.*, u.name AS student_name, u.roll_no AS student_roll_no,
               u.department AS student_department, u.email AS student_email
       FROM complaints c
@@ -47,17 +45,17 @@ router.patch("/complaints/:code", authenticate, adminOnly, async (req, res) => {
       return res.status(400).json({ success:false, message:"Admin note must be text" });
     }
 
-    const [result] = await db.query(
-      "UPDATE complaints SET status=?, admin_note=?, updated_at=CURRENT_TIMESTAMP WHERE complaint_code=?",
+    const result = await db.query(
+      "UPDATE complaints SET status=$1, admin_note=$2, updated_at=NOW() WHERE complaint_code=$3",
       [status, admin_note?.trim() || null, req.params.code]
     );
 
-    if (!result.affectedRows) {
-      const [existing] = await db.query(
-        "SELECT id FROM complaints WHERE complaint_code = ?",
+    if (!result.rowCount) {
+      const existing = await db.query(
+        "SELECT id FROM complaints WHERE complaint_code = $1",
         [req.params.code]
       );
-      if (!existing.length) return res.status(404).json({ success:false, message:"Complaint not found" });
+      if (!existing.rows.length) return res.status(404).json({ success:false, message:"Complaint not found" });
     }
     res.json({
       success:true,
@@ -79,32 +77,31 @@ router.delete("/complaints/:id", authenticate, adminOnly, async (req, res) => {
   }
 
   try {
-    const [complaints] = await db.query(
-      "SELECT photo FROM complaints WHERE id = ?",
+    const complaints = await db.query(
+      "SELECT photo FROM complaints WHERE id = $1",
       [id]
     );
-    if (!complaints.length) return res.status(404).json({ success:false, message:"Complaint not found" });
+    if (!complaints.rows.length) return res.status(404).json({ success:false, message:"Complaint not found" });
 
-    const [result] = await db.query(
-      "DELETE FROM complaints WHERE id = ?",
+    const result = await db.query(
+      "DELETE FROM complaints WHERE id = $1",
       [id]
     );
-    if (!result.affectedRows) return res.status(404).json({ success:false, message:"Complaint not found" });
+    if (!result.rowCount) return res.status(404).json({ success:false, message:"Complaint not found" });
 
     let photoCleanupFailed = false;
-    const photoPath = getComplaintPhotoPath(complaints[0].photo);
-    if (photoPath) {
+    const photo = complaints.rows[0].photo;
+    const photoKey = getUploadKey(photo);
+    if (photoKey) {
       try {
-        const [otherReferences] = await db.query(
-          "SELECT id FROM complaints WHERE photo = ? LIMIT 1",
-          [complaints[0].photo]
+        const otherReferences = await db.query(
+          "SELECT id FROM complaints WHERE photo = $1 LIMIT 1",
+          [photo]
         );
-        if (!otherReferences.length) await fs.unlink(photoPath);
+        if (!otherReferences.rows.length) await getUploadStore().delete(photoKey);
       } catch (error) {
-        if (error.code !== "ENOENT") {
-          photoCleanupFailed = true;
-          console.error("Could not remove deleted complaint photo:", error);
-        }
+        photoCleanupFailed = true;
+        console.error("Could not remove deleted complaint photo:", error);
       }
     }
 
@@ -120,16 +117,5 @@ router.delete("/complaints/:id", authenticate, adminOnly, async (req, res) => {
     res.status(500).json({ success:false, message:"Could not delete complaint" });
   }
 });
-
-function getComplaintPhotoPath(photo) {
-  if (typeof photo !== "string" || !photo.startsWith("/uploads/")) return null;
-  const filename = photo.slice("/uploads/".length);
-  if (!filename || filename !== path.basename(filename)) return null;
-
-  const filePath = path.resolve(uploadDirectory, filename);
-  const relativePath = path.relative(uploadDirectory, filePath);
-  if (!relativePath || relativePath === ".." || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) return null;
-  return filePath;
-}
 
 module.exports = router;

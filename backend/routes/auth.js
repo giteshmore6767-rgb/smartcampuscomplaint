@@ -2,6 +2,7 @@ const router = require("express").Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../db");
+const { getJwtSecret } = require("../jwt-secret");
 const { authenticate } = require("../middleware/auth");
 
 // ================= LOGIN =================
@@ -16,24 +17,25 @@ router.post("/login", async (req, res) => {
           });
       }
 
-      let rows;
+        let result;
 
       if (email) {
-          [rows] = await db.query(
+          result = await db.query(
               `SELECT id, name, roll_no, email, password_hash, role, department
                FROM users
-               WHERE email = ?`,
+               WHERE email = $1`,
               [email]
           );
       } else {
-          [rows] = await db.query(
+          result = await db.query(
               `SELECT id, name, roll_no, email, password_hash, role, department
                FROM users
-               WHERE roll_no = ?`,
+               WHERE roll_no = $1`,
               [roll_no]
           );
       }
 
+      const rows = result.rows;
       if (!rows.length) {
           return res.status(401).json({
               success: false,
@@ -64,7 +66,7 @@ router.post("/login", async (req, res) => {
               role: user.role,
               department: user.department
           },
-          process.env.JWT_SECRET || "change_this_secret",
+          getJwtSecret(),
           {
               expiresIn: "8h"
           }
@@ -121,12 +123,12 @@ router.post("/register", async (req, res) => {
     }
 
     // Check if Roll Number already exists
-    const [existing] = await db.query(
-      "SELECT id FROM users WHERE roll_no = ?",
+    const existing = await db.query(
+      "SELECT id FROM users WHERE roll_no = $1",
       [roll_no]
     );
 
-    if (existing.length > 0) {
+    if (existing.rows.length > 0) {
       return res.status(409).json({
         success: false,
         message: "Roll number already registered"
@@ -137,10 +139,11 @@ router.post("/register", async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Create student account
-    const [result] = await db.query(
+    const result = await db.query(
       `INSERT INTO users
       (name, roll_no, password_hash, role, department)
-      VALUES (?, ?, ?, 'student', ?)`,
+      VALUES ($1, $2, $3, 'student', $4)
+      RETURNING id`,
       [
         name,
         roll_no,
@@ -152,7 +155,7 @@ router.post("/register", async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Student account created successfully",
-      userId: result.insertId
+      userId: result.rows[0].id
     });
 
   } catch (error) {
@@ -185,7 +188,7 @@ router.patch("/profile", authenticate, async (req, res) => {
     }
 
     await db.query(
-      "UPDATE users SET name = ?, department = ? WHERE id = ? AND role = 'student'",
+      "UPDATE users SET name = $1, department = $2 WHERE id = $3 AND role = 'student'",
       [normalizedName, normalizedDepartment, req.user.id]
     );
 

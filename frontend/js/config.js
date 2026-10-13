@@ -1,4 +1,6 @@
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+  ? "http://localhost:5000/api"
+  : `${window.location.origin}/api`;
 function getToken(){ return localStorage.getItem("sc_token"); }
 function logout(){ localStorage.removeItem("sc_token"); localStorage.removeItem("sc_user"); location.href="index.html"; }
 function requireLogin(role){

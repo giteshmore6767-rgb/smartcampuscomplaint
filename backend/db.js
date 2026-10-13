@@ -1,13 +1,17 @@
-const mysql = require("mysql2/promise");
 require("dotenv").config();
+const { Pool } = require("pg");
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "smart_campus",
-  waitForConnections: true,
-  connectionLimit: 10
+const connectionString = process.env.NETLIFY_DB_URL || process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("Set NETLIFY_DB_URL or DATABASE_URL before starting the API");
+}
+
+const pool = new Pool({
+  connectionString,
+  max: Number(process.env.PG_POOL_MAX || 2),
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000
 });
 
 module.exports = pool;
